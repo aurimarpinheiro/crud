@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD com PHP e MySQL</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gerenciamento de Itens</h1>
+
+        <form id="create-form">
+            <input type="text" id="name" placeholder="Nome do item" required>
+            <button type="submit">Adicionar Item</button>
+        </form>
+
+        <ul id="items-list"></ul>
+    </div>
+
+    <script>
+        // Função para carregar os itens
+        function loadItems() {
+            fetch('api.php')
+                .then(response => response.json())
+                .then(items => {
+                    const itemsList = document.getElementById('items-list');
+                    itemsList.innerHTML = '';
+                    items.forEach(item => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            <span>${item.name}</span>
+                            <button onclick="editItem('${item.id}', '${item.name}')">Editar</button>
+                            <button onclick="deleteItem('${item.id}')">Deletar</button>
+                        `;
+                        itemsList.appendChild(listItem);
+                    });
+                });
+        }
+
+        // Função para criar um novo item
+        document.getElementById('create-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            fetch('api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            }).then(() => {
+                document.getElementById('name').value = '';
+                loadItems();
+            });
+        });
+
+        // Função para editar um item
+        function editItem(id, currentName) {
+            const newName = prompt('Editar nome do item:', currentName);
+            if (newName) {
+                fetch('api.php', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, name: newName })
+                }).then(() => loadItems());
+            }
+        }
+
+        // Função para deletar um item
+        function deleteItem(id) {
+            if (confirm('Tem certeza que deseja deletar este item?')) {
+                fetch('api.php', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                }).then(() => loadItems());
+            }
+        }
+
+        // Carrega os itens ao iniciar a página
+        loadItems();
+    </script>
+
+</body>
+</html>
