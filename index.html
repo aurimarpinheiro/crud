@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRUD com PHP e MySQL</title>
+    <title>CRUD com PHP e MySQL - Upload de Arquivo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,11 +11,26 @@
     <div class="container">
         <h1>Gerenciamento de Itens</h1>
 
+        <!-- Formulário para adicionar um item individual -->
         <form id="create-form">
             <input type="text" id="name" placeholder="Nome do item" required>
             <button type="submit">Adicionar Item</button>
         </form>
 
+        <!-- Input de arquivo -->
+        <div>
+            <h3>Upload de arquivo</h3>
+            <input type="file" id="file-input" accept=".txt">
+            <button onclick="uploadFile()">Enviar Arquivo</button>
+        </div>
+
+        <!-- Barra de progresso -->
+        <div id="progress-container" style="display: none;">
+            <progress id="progress-bar" value="0" max="100"></progress>
+            <span id="progress-text">0%</span>
+        </div>
+
+        <!-- Lista de itens -->
         <ul id="items-list"></ul>
     </div>
 
@@ -74,6 +89,57 @@
                     body: JSON.stringify({ id })
                 }).then(() => loadItems());
             }
+        }
+
+        // Função para fazer upload de arquivo
+        function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Selecione um arquivo!');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const lines = event.target.result.split('\n').filter(line => line.trim() !== '');
+                if (lines.length === 0) {
+                    alert('O arquivo está vazio.');
+                    return;
+                }
+
+                const progressContainer = document.getElementById('progress-container');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+
+                progressContainer.style.display = 'block';
+                progressBar.value = 0;
+                progressText.textContent = '0%';
+
+                const totalItems = lines.length;
+
+                lines.forEach((line, index) => {
+                    fetch('api.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: line.trim() })
+                    }).then(() => {
+                        const progress = Math.round(((index + 1) / totalItems) * 100);
+                        progressBar.value = progress;
+                        progressText.textContent = `${progress}%`;
+
+                        // Quando completar a inserção de todos os itens, recarrega a lista
+                        if (index + 1 === totalItems) {
+                            loadItems();
+                            alert('Itens do arquivo foram inseridos com sucesso.');
+                            progressContainer.style.display = 'none';
+                        }
+                    });
+                });
+            };
+
+            reader.readAsText(file);
         }
 
         // Carrega os itens ao iniciar a página
