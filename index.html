@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRUD com PHP e MySQL - Upload de Arquivo</title>
+    <title>CRUD com PHP e MySQL - Upload de Planilha Excel</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,11 +17,11 @@
             <button type="submit">Adicionar Item</button>
         </form>
 
-        <!-- Input de arquivo -->
+        <!-- Input de arquivo .xlsx -->
         <div>
-            <h3>Upload de arquivo</h3>
-            <input type="file" id="file-input" accept=".txt">
-            <button onclick="uploadFile()">Enviar Arquivo</button>
+            <h3>Upload de planilha Excel</h3>
+            <input type="file" id="file-input" accept=".xlsx">
+            <button onclick="uploadFile()">Enviar Planilha</button>
         </div>
 
         <!-- Barra de progresso -->
@@ -35,24 +35,46 @@
     </div>
 
     <script>
-        // Função para carregar os itens
-        function loadItems() {
-            fetch('api.php')
-                .then(response => response.json())
-                .then(items => {
-                    const itemsList = document.getElementById('items-list');
-                    itemsList.innerHTML = '';
-                    items.forEach(item => {
-                        const listItem = document.createElement('li');
-                        listItem.innerHTML = `
-                            <span>${item.name}</span>
-                            <button onclick="editItem('${item.id}', '${item.name}')">Editar</button>
-                            <button onclick="deleteItem('${item.id}')">Deletar</button>
-                        `;
-                        itemsList.appendChild(listItem);
-                    });
-                });
+        // Função para fazer upload do arquivo Excel
+        function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Selecione um arquivo!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            progressContainer.style.display = 'block';
+            progressBar.value = 0;
+            progressText.textContent = '0%';
+
+            fetch('upload_excel.php', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Planilha processada com sucesso.');
+                    loadItems();
+                } else {
+                    alert('Erro ao processar planilha: ' + result.message);
+                }
+                progressContainer.style.display = 'none';
+            })
+            .catch(error => {
+                alert('Erro: ' + error);
+                progressContainer.style.display = 'none';
+            });
         }
+
 
         // Função para criar um novo item
         document.getElementById('create-form').addEventListener('submit', function(event) {
@@ -92,7 +114,7 @@
         }
 
         // Função para fazer upload de arquivo
-        function uploadFile() {
+        function uploadFileTxt() {
             const fileInput = document.getElementById('file-input');
             const file = fileInput.files[0];
             
@@ -140,6 +162,26 @@
             };
 
             reader.readAsText(file);
+        }
+
+
+        // Função para carregar os itens (continua a mesma)
+        function loadItems() {
+            fetch('api.php')
+                .then(response => response.json())
+                .then(items => {
+                    const itemsList = document.getElementById('items-list');
+                    itemsList.innerHTML = '';
+                    items.forEach(item => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            <span>${item.name}</span>
+                            <button onclick="editItem('${item.id}', '${item.name}')">Editar</button>
+                            <button onclick="deleteItem('${item.id}')">Deletar</button>
+                        `;
+                        itemsList.appendChild(listItem);
+                    });
+                });
         }
 
         // Carrega os itens ao iniciar a página
